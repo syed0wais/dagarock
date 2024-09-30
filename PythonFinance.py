@@ -2,6 +2,7 @@
 import pandas as pd
 import datetime as dt
 import yfinance as yf  # Switched to yfinance for more reliable data
+import plotly.graph_objects as go
 
 class Finance():
     def __init__(self):
@@ -31,23 +32,43 @@ class Finance():
         # Calculate the 5-day moving average
         self.df['1 ma'] = self.df['Close'].rolling(window=5, min_periods=0).mean()
         
-        # Print Stock Prices and Moving Averages
-        print(f"\nStock Prices and 5-Day Moving Average for {ticker}:\n")
-        print(self.df[['Date', 'Close', '1 ma']].tail(10))  # Print the last 10 rows
+        # Create the figure for plotting
+        fig = go.Figure()
 
-        # Generate buy/sell signals
+        # Add stock price line
+        fig.add_trace(go.Scatter(x=self.df['Date'], y=self.df['Close'], mode='lines', name='Stock Price', line=dict(color='yellow')))
+
+        # Add 5-day moving average line
+        fig.add_trace(go.Scatter(x=self.df['Date'], y=self.df['1 ma'], mode='lines', name='5-Day Moving Avg', line=dict(color='cyan')))
+
+        # Generate buy/sell signals and display them on the graph
         C = self.df['Close'].tolist()
         D = self.df['1 ma'].tolist()
         E = self.df['Date'].tolist()
+        buy_signals = []
+        sell_signals = []
 
-        print("\nBuy/Sell Signals (Last 10 days):")
         for i in range(len(C)):
-            signal = ''
             if C[i] > D[i]:
-                signal = 'BUY/HOLD'  # Green signal
+                buy_signals.append((E[i], C[i]))  # BUY/HOLD
             elif C[i] < D[i]:
-                signal = 'SELL'  # Red signal
-            print(f"Date: {E[i].strftime('%Y-%m-%d')} | Price: {C[i]:.2f} | 5-Day MA: {D[i]:.2f} | Signal: {signal}")
+                sell_signals.append((E[i], C[i]))  # SELL
+
+        # Add buy signals to the plot (green markers)
+        fig.add_trace(go.Scatter(x=[x[0] for x in buy_signals], y=[x[1] for x in buy_signals],
+                                 mode='markers', name='Buy Signal', marker=dict(color='green', size=10)))
+
+        # Add sell signals to the plot (red markers)
+        fig.add_trace(go.Scatter(x=[x[0] for x in sell_signals], y=[x[1] for x in sell_signals],
+                                 mode='markers', name='Sell Signal', marker=dict(color='red', size=10)))
+
+        # Update layout
+        fig.update_layout(title=f"Stock Price and 5-Day Moving Avg for {ticker}",
+                          xaxis_title="Date", yaxis_title="Price",
+                          template='plotly_white')
+
+        # Show the plot
+        fig.show()
 
 if __name__ == "__main__":
     finance = Finance()
