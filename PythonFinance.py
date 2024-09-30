@@ -1,17 +1,14 @@
 # Importing Libraries
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib import style
 import datetime as dt
 import yfinance as yf  # Switched to yfinance for more reliable data
 
 class Finance():
     def __init__(self):
-        style.use('ggplot')
-        # Historic Data Since 1 Jan 2015. You can change it according to your preference (yyyy, mm, dd)
+        # Historic Data Since 1 Jan 2015
         self.start = dt.datetime(2015, 1, 1)
         self.end = dt.datetime.now()
-    
+
     def get_stock_price(self, ticker):
         try:
             # Fetch data using yfinance
@@ -22,7 +19,7 @@ class Finance():
         except Exception as e:
             print(f"Error fetching stock data for {ticker}: {e}")
             return None
-    
+
     def get_moving_avg(self, ticker):
         # Get stock data
         self.df = self.get_stock_price(ticker)
@@ -34,43 +31,23 @@ class Finance():
         # Calculate the 5-day moving average
         self.df['1 ma'] = self.df['Close'].rolling(window=5, min_periods=0).mean()
         
-        # Set up the plot
-        fig, ax1 = plt.subplots(figsize=(10, 6))
+        # Print Stock Prices and Moving Averages
+        print(f"\nStock Prices and 5-Day Moving Average for {ticker}:\n")
+        print(self.df[['Date', 'Close', '1 ma']].tail(10))  # Print the last 10 rows
 
-        # Plot the actual adjusted close price
-        ax1.plot(self.df['Date'], self.df['Close'], label='Stock Price', color='yellow', linewidth=2)
-
-        # Plot the moving average
-        ax1.plot(self.df['Date'], self.df['1 ma'], label='5-Day Moving Average', color='cyan', linewidth=2)
-
-        # Add labels, title, and grid
-        ax1.set_xlabel("Date")
-        ax1.set_ylabel("Price")
-        plt.title(f"Ticker Symbol: {ticker}")
-
-        # Generate buy/sell signals and display them on the graph
+        # Generate buy/sell signals
         C = self.df['Close'].tolist()
         D = self.df['1 ma'].tolist()
         E = self.df['Date'].tolist()
-        buy_sell_signal = []
 
+        print("\nBuy/Sell Signals (Last 10 days):")
         for i in range(len(C)):
+            signal = ''
             if C[i] > D[i]:
-                action = 'BUY/HOLD'
-                buy_sell_signal.append((E[i], C[i], 'green'))  # BUY/HOLD -> Green
+                signal = 'BUY/HOLD'  # Green signal
             elif C[i] < D[i]:
-                action = 'SELL'
-                buy_sell_signal.append((E[i], C[i], 'red'))  # SELL -> Red
-
-        # Add buy/sell signals to the graph
-        for date, price, color in buy_sell_signal:
-            ax1.scatter(date, price, color=color, marker='o', s=50, label=f"Signal: {color}")
-
-        # Display legend and grid
-        ax1.legend()
-        ax1.grid(True)
-        
-        plt.show()
+                signal = 'SELL'  # Red signal
+            print(f"Date: {E[i].strftime('%Y-%m-%d')} | Price: {C[i]:.2f} | 5-Day MA: {D[i]:.2f} | Signal: {signal}")
 
 if __name__ == "__main__":
     finance = Finance()
